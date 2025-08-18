@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Desafio de Lógica Relâmpago</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter,Segoe UI,system-ui,-apple-system,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,#071025 0%, #091228 50%, #051025 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .wrap{width:100%;max-width:920px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .game{display:grid;grid-template-columns:1fr 320px;gap:16px}
+    .left{padding:18px}
+    .right{padding:18px}
+    .stage{font-size:18px;margin-bottom:8px;color:var(--muted)}
+    .problem{font-size:28px;font-weight:600;padding:18px;border-radius:10px;background:var(--glass);margin-bottom:14px}
+    input[type="text"]{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:16px}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:white;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .meta{display:flex;flex-direction:column;gap:10px}
+    .stat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px}
+    .timer{font-size:22px;font-weight:700}
+    .hint{color:#ffd166;font-weight:600}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    .levels{display:flex;gap:6px;flex-wrap:wrap}
+    .level-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer}
+    .level-btn.active{outline:2px solid rgba(124,58,237,0.25)}
+    .center{display:flex;align-items:center;justify-content:center}
+    @media(max-width:900px){.game{grid-template-columns:1fr;}.right{order:2}.left{order:1}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Desafio de Lógica Relâmpago</h1>
+      <div style="text-align:right;color:var(--muted)">Rápido • Desafiador • Sem instalação</div>
+    </header>
+
+    <div class="card game">
+      <div class="left">
+        <div class="stage">Nível <span id="levelLabel">1</span> • Pontos: <span id="scoreLabel">0</span></div>
+
+        <div class="problem" id="problem">Carregando...</div>
+
+        <input id="answerInput" type="text" placeholder="Digite sua resposta e pressione Enviar" autocomplete="off" />
+
+        <div class="controls">
+          <button id="submitBtn">Enviar</button>
+          <button id="hintBtn" class="ghost">Pedir dica (-5 pts)</button>
+          <button id="skipBtn" class="ghost">Pular (-3 pts)</button>
+          <button id="newBtn" class="ghost">Novo Jogo</button>
+        </div>
+
+        <div style="margin-top:12px;color:var(--muted);font-size:14px">Dica rápida: escreva números sem formatação (ex.: 42). Para sequências, pode ser texto curto também.</div>
+      </div>
+
+      <aside class="right">
+        <div class="meta">
+          <div class="stat"><div>Tempo restante</div><div class="timer" id="timer">00:30</div></div>
+          <div class="stat"><div>Última dica</div><div id="lastHint" class="hint">—</div></div>
+          <div class="stat"><div>Recorde local</div><div id="highscore">0</div></div>
+          <div class="stat"><div>Modo</div>
+            <div style="margin-top:8px" class="levels">
+              <div class="level-btn active" data-level="1">Fácil</div>
+              <div class="level-btn" data-level="2">Médio</div>
+              <div class="level-btn" data-level="3">Difícil</div>
+            </div>
+          </div>
+
+          <div class="stat center"><button id="arcadeBtn">Modo Arcade (60s)</button></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      Dicas: acerte rápido para ganhar mais pontos; pedir ajuda custa pontos. Quer que eu adicione som, mais níveis ou exportar scores? Peça que eu personalize!
+    </footer>
+  </div>
+
+  <script>
+    // --- Jogo: Desafio de Lógica Relâmpago ---
+    const problemEl = document.getElementById('problem');
+    const answerInput = document.getElementById('answerInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const newBtn = document.getElementById('newBtn');
+    const timerEl = document.getElementById('timer');
+    const lastHintEl = document.getElementById('lastHint');
+    const scoreLabel = document.getElementById('scoreLabel');
+    const levelLabel = document.getElementById('levelLabel');
+    const highscoreEl = document.getElementById('highscore');
+    const arcadeBtn = document.getElementById('arcadeBtn');
+    const levelBtns = document.querySelectorAll('.level-btn');
+
+    let game = null;
+
+    function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+    const generators = {
+      1: generateEasy,
+      2: generateMedium,
+      3: generateHard
+    };
+
+    function generateEasy(){
+      const types = ['seq','math','riddle'];
+      const t = types[randInt(0,types.length-1)];
+      if(t==='seq'){
+        const start = randInt(1,5);
+        const mul = [2,3][randInt(0,1)];
+        const seq = [start,start*mul,start*mul*mul];
+        return {text:`Sequência: ${seq.join(', ')} , ___`, answer:String(seq[2]*mul), hint:`Multiplica por ${mul}`};
+      }
+      if(t==='math'){
+        const a=randInt(2,9);const b=randInt(2,9);
+        return {text:`Quanto é ${a} × ${b}?`, answer:String(a*b), hint:`Multiplicação básica: ${a} vezes ${b}`};
+      }
+      const r = [{q:'Sou tomado antes de comer. O que sou?', a:'muito fome'},{q:'Tenho chaves mas não tranco nada. O que sou?', a:'piano'}];
+      const pick=r[randInt(0,r.length-1)];
+      return {text:`Charada: ${pick.q}`, answer:pick.a, hint:`Pense em objetos do dia a dia`};
+    }
+
+    function generateMedium(){
+      const t = randInt(0,2);
+      if(t===0){
+        const start=randInt(1,10);const diff=randInt(2,6);
+        return {text:`Sequência: ${start}, ${start+diff}, ${start+2*diff}, ___`, answer:String(start+3*diff), hint:`Adiciona ${diff} a cada passo`};
+      }
+      if(t===1){
+        const a=randInt(2,12);const b=randInt(1,10);
+        return {text:`Se 3x + ${b} = ${3*a+b}, qual é x?`, answer:String(a), hint:`Isole x`};
+      }
+      return {text:`Qual palavra completa a sequência: CASA, SASA, ? (troca 1 letra)`, answer:'CASO', hint:'Troque uma letra para formar uma palavra válida'};
+    }
+
+    function generateHard(){
+      const t = randInt(0,2);
+      if(t===0){
+        const a=randInt(1,6);const b=randInt(1,9);
+        return {text:`Sequência: ${a}, ${b}, ${a+b}, ${a+2*b}, ___`, answer:String(2*a+3*b), hint:'Padrão baseado em somas lineares'};
+      }
+      if(t===1){
+        const x=randInt(2,9);const y=randInt(2,9);
+        return {text:`Resolva: ${x}y = ${x*y}. Qual é y?`, answer:String(y), hint:`Divida ambos os lados por ${x}`};
+      }
+      return {text:`Se TODOS os rosas são flores e ALGUMAS flores são perfumadas, podemos afirmar que ALGUMAS rosas são perfumadas? (sim/não)`, answer:'não', hint:'"Algumas" não garante interseção'};
+    }
+
+    function newGame(){
+      game = {
+        level:1,
+        score:0,
+        time:30,
+        running:false,
+        current:null,
+        arcade:false
+      };
+      loadHighscore();
+      updateUI();
+      nextProblem();
+    }
+
+    function loadHighscore(){
+      const hs = localStorage.getItem('dlr_highscore')||'0';
+      highscoreEl.textContent = hs;
+    }
+
+    function saveHighscore(){
+      const cur = Number(localStorage.getItem('dlr_highscore')||0);
+      if(game.score>cur) localStorage.setItem('dlr_highscore',String(game.score));
+      loadHighscore();
+    }
+
+    function updateUI(){
+      scoreLabel.textContent = game.score;
+      levelLabel.textContent = game.level;
+    }
+
+    function formatTime(sec){
+      const s = String(sec%60).padStart(2,'0');
+      return `00:${s}`;
+    }
+
+    let timerInterval = null;
+    function startTimer(){
+      if(timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(()=>{
+        game.time -= 1;
+        if(game.time<0) game.time = 0;
+        timerEl.textContent = formatTime(game.time);
+        if(game.time<=0){
+          clearInterval(timerInterval);
+          endRound();
+        }
+      },1000);
+    }
+
+    function beginIfNeeded(){
+      if(!game.running){
+        game.running = true;
+        startTimer();
+      }
+    }
+
+    function nextProblem(){
+      const gen = generators[game.level] || generators[1];
+      const p = gen();
+      game.current = p;
+      problemEl.textContent = p.text;
+      lastHintEl.textContent = '—';
+      answerInput.value = '';
+      timerEl.textContent = formatTime(game.time);
+    }
+
+    function checkAnswer(){
+      beginIfNeeded();
+      const raw = answerInput.value.trim().toLowerCase();
+      if(!raw) return flash("Escreva algo antes de enviar");
+      const correct = String(game.current.answer).trim().toLowerCase();
+      if(raw === correct){
+        const gained = 10 + Math.max(0, Math.floor(game.time/3));
+        game.score += gained;
+        flash(`Correto! +${gained} pts`);
+        if(game.score > 0 && game.score % 40 === 0) game.level = Math.min(3, game.level+1);
+        updateUI();
+        if(game.arcade){
+          game.time = Math.min(120, game.time + 7);
+        }
+        nextProblem();
+      } else {
+        game.score = Math.max(0, game.score - 2);
+        flash('Errado. Tente outra vez ou peça uma dica (-5 pts)');
+        updateUI();
+      }
+    }
+
+    function requestHint(){
+      if(!game.current) return;
+      game.score = Math.max(0, game.score - 5);
+      lastHintEl.textContent = game.current.hint || 'Sem dica disponível';
+      updateUI();
+    }
+
+    function skipProblem(){
+      game.score = Math.max(0, game.score - 3);
+      updateUI();
+      nextProblem();
+    }
+
+    function endRound(){
+      game.running = false;
+      saveHighscore();
+      alert(`Tempo! Resultado: ${game.score} pontos. Nível alcançado: ${game.level}`);
+      game.time = game.arcade ? 60 : 30;
+      game.score = 0;
+      game.level = 1;
+      updateUI();
+      nextProblem();
+    }
+
+    function flash(txt){
+      const prev = problemEl.textContent;
+      problemEl.textContent = txt;
+      setTimeout(()=>{ if(game.current) problemEl.textContent = game.current.text; },900);
+    }
+
+    submitBtn.addEventListener('click', checkAnswer);
+    answerInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') checkAnswer(); });
+    hintBtn.addEventListener('click',()=>{ requestHint(); });
+    skipBtn.addEventListener('click',()=>{ skipProblem(); });
+    newBtn.addEventListener('click',()=>{ if(confirm('Iniciar novo jogo?')) newGame(); });
+
+    arcadeBtn.addEventListener('click',()=>{
+      if(confirm('Iniciar Modo Arcade: 60 segundos. Pronto?')){
+        game.arcade = true; game.time = 60; game.score = 0; game.level = 1; updateUI(); nextProblem(); startTimer(); game.running=true;
+      }
+    });
+
+    levelBtns.forEach(b=>{
+      b.addEventListener('click',()=>{
+        levelBtns.forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        game.level = Number(b.dataset.level);
+        updateUI();
+        nextProblem();
+      });
+    });
+
+    newGame();
+  </script>
+</body>
+</html>
