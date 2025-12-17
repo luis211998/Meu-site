@@ -304,6 +304,10 @@
 
     updateLabels();
     log('Aguardando inicialização do fluxo...');
+    setTimeout(() => {
+      log('Fluxo detectado, iniciando simulação automática.');
+      start();
+    }, 600);
   </script>
 </body>
 </html>
