@@ -2,296 +2,312 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Desafio de Lógica Relâmpago</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador de Redutor de Ar na Tubulação</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass: rgba(255,255,255,0.03)}
-    *{box-sizing:border-box;font-family:Inter,Segoe UI,system-ui,-apple-system,Roboto,'Helvetica Neue',Arial}
-    body{margin:0;background:linear-gradient(180deg,#071025 0%, #091228 50%, #051025 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .wrap{width:100%;max-width:920px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    .game{display:grid;grid-template-columns:1fr 320px;gap:16px}
-    .left{padding:18px}
-    .right{padding:18px}
-    .stage{font-size:18px;margin-bottom:8px;color:var(--muted)}
-    .problem{font-size:28px;font-weight:600;padding:18px;border-radius:10px;background:var(--glass);margin-bottom:14px}
-    input[type="text"]{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:16px}
-    .controls{display:flex;gap:8px;margin-top:12px}
-    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:white;font-weight:600;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
-    .meta{display:flex;flex-direction:column;gap:10px}
-    .stat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px}
-    .timer{font-size:22px;font-weight:700}
-    .hint{color:#ffd166;font-weight:600}
-    footer{margin-top:14px;color:var(--muted);font-size:13px}
-    .levels{display:flex;gap:6px;flex-wrap:wrap}
-    .level-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer}
-    .level-btn.active{outline:2px solid rgba(124,58,237,0.25)}
-    .center{display:flex;align-items:center;justify-content:center}
-    @media(max-width:900px){.game{grid-template-columns:1fr;}.right{order:2}.left{order:1}}
+    :root {
+      --bg: #060d1b;
+      --panel: #0b1427;
+      --accent: #1fb6ff;
+      --muted: #9eb6d8;
+      --tube: linear-gradient(90deg, rgba(31,182,255,0.2), rgba(66,255,210,0.4));
+      --water: linear-gradient(180deg, rgba(66,255,210,0.25), rgba(31,182,255,0.75));
+      --glass: rgba(255,255,255,0.04);
+    }
+    * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 15% 20%, rgba(31,182,255,0.14), transparent 25%),
+                  radial-gradient(circle at 80% 0%, rgba(66,255,210,0.12), transparent 30%),
+                  linear-gradient(180deg, #050c1a 0%, #061024 50%, #040918 100%);
+      color: #e8f1ff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+    .wrap { width: 100%; max-width: 1100px; display: grid; gap: 18px; grid-template-columns: 1.2fr 1fr; }
+    @media (max-width: 980px) { .wrap { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+    }
+    header h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
+    header p { margin: 6px 0 0; color: var(--muted); }
+    .hero {
+      background: linear-gradient(120deg, rgba(31,182,255,0.08), rgba(66,255,210,0.06));
+      border: 1px solid rgba(31,182,255,0.12);
+      padding: 18px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .hero .badge { background: rgba(31,182,255,0.15); color: #7ae2ff; padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 12px; letter-spacing: 0.8px; }
+    .hero strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .tube-area { margin-top: 18px; }
+    .tube-shell {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      border-radius: 18px;
+      padding: 14px;
+      background: radial-gradient(circle at 30% 30%, rgba(66,255,210,0.12), transparent 40%),
+                  linear-gradient(120deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .tube-body {
+      position: absolute;
+      inset: 28px 18px;
+      border-radius: 14px;
+      background: var(--tube);
+      box-shadow: inset 0 0 0 2px rgba(31,182,255,0.18), inset 0 0 18px rgba(66,255,210,0.25);
+    }
+    .tube-inner {
+      position: absolute;
+      inset: 12px;
+      border-radius: 10px;
+      background: var(--water);
+      overflow: hidden;
+      mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+    }
+    .bubble { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.8); opacity: 0.5; filter: drop-shadow(0 0 8px rgba(255,255,255,0.45)); animation: rise 6s linear infinite; }
+    @keyframes rise { from { transform: translateY(120%); } to { transform: translateY(-140%); } }
+    .stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 16px; }
+    .stat {
+      background: var(--glass);
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat small { color: var(--muted); letter-spacing: 0.4px; }
+    .stat .value { font-size: 22px; font-weight: 700; margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+    .controls { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+    .control-row { display: flex; align-items: center; gap: 12px; }
+    .control-row label { width: 120px; color: var(--muted); }
+    input[type="range"] { flex: 1; accent-color: #39d0ff; }
+    .pill { padding: 6px 10px; border-radius: 999px; font-size: 12px; background: rgba(66,255,210,0.12); color: #9ff7e7; }
+    button { border: none; border-radius: 12px; padding: 12px 14px; font-weight: 700; cursor: pointer; color: #02101f; background: linear-gradient(120deg, #39d0ff, #4cf1c7); box-shadow: 0 10px 30px rgba(57,208,255,0.3); }
+    button.secondary { background: rgba(255,255,255,0.06); color: #e8f1ff; box-shadow: none; border: 1px solid rgba(255,255,255,0.08); }
+    .flex { display: flex; gap: 10px; flex-wrap: wrap; }
+    .log { margin-top: 10px; font-size: 14px; color: var(--muted); line-height: 1.6; max-height: 120px; overflow-y: auto; border-left: 2px solid rgba(57,208,255,0.28); padding-left: 10px; }
+    .aside-title { font-size: 18px; margin: 0 0 10px; }
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <h1>Desafio de Lógica Relâmpago</h1>
-      <div style="text-align:right;color:var(--muted)">Rápido • Desafiador • Sem instalação</div>
-    </header>
+    <section class="card">
+      <header>
+        <h1>Dispositivo Eliminador de Ar</h1>
+        <p>Simulação visual do funcionamento de um tubo instalado antes do hidrômetro para expulsar bolhas e entregar apenas água.</p>
+      </header>
 
-    <div class="card game">
-      <div class="left">
-        <div class="stage">Nível <span id="levelLabel">1</span> • Pontos: <span id="scoreLabel">0</span></div>
-
-        <div class="problem" id="problem">Carregando...</div>
-
-        <input id="answerInput" type="text" placeholder="Digite sua resposta e pressione Enviar" autocomplete="off" />
-
-        <div class="controls">
-          <button id="submitBtn">Enviar</button>
-          <button id="hintBtn" class="ghost">Pedir dica (-5 pts)</button>
-          <button id="skipBtn" class="ghost">Pular (-3 pts)</button>
-          <button id="newBtn" class="ghost">Novo Jogo</button>
+      <div class="hero">
+        <div class="badge">PROTOCOLO • AQUA-FOCUS</div>
+        <div>
+          <strong>Fluxo mais preciso, conta mais justa.</strong>
+          Ajuste a potência do vácuo, o ritmo da válvula e veja o indicador de pureza do fluxo em tempo real.
         </div>
-
-        <div style="margin-top:12px;color:var(--muted);font-size:14px">Dica rápida: escreva números sem formatação (ex.: 42). Para sequências, pode ser texto curto também.</div>
       </div>
 
-      <aside class="right">
-        <div class="meta">
-          <div class="stat"><div>Tempo restante</div><div class="timer" id="timer">00:30</div></div>
-          <div class="stat"><div>Última dica</div><div id="lastHint" class="hint">—</div></div>
-          <div class="stat"><div>Recorde local</div><div id="highscore">0</div></div>
-          <div class="stat"><div>Modo</div>
-            <div style="margin-top:8px" class="levels">
-              <div class="level-btn active" data-level="1">Fácil</div>
-              <div class="level-btn" data-level="2">Médio</div>
-              <div class="level-btn" data-level="3">Difícil</div>
-            </div>
-          </div>
-
-          <div class="stat center"><button id="arcadeBtn">Modo Arcade (60s)</button></div>
+      <div class="tube-area">
+        <div class="tube-shell">
+          <div class="tube-body"></div>
+          <div class="tube-inner" id="tubeInner"></div>
         </div>
-      </aside>
-    </div>
+        <div class="legend">
+          <div><span class="dot" style="background:#4cf1c7"></span>Água livre de ar</div>
+          <div><span class="dot" style="background:#9ee0ff"></span>Bolhas capturadas e expelidas</div>
+        </div>
+      </div>
 
-    <footer>
-      Dicas: acerte rápido para ganhar mais pontos; pedir ajuda custa pontos. Quer que eu adicione som, mais níveis ou exportar scores? Peça que eu personalize!
-    </footer>
+      <div class="stats">
+        <div class="stat"><small>Pureza do fluxo</small><div class="value" id="purity">99,8%</div><div class="pill" id="status">Modo Eco</div></div>
+        <div class="stat"><small>Ar extraído</small><div class="value" id="airRemoved">0,00 L</div><div class="pill">Válvula ciclone</div></div>
+        <div class="stat"><small>Vazão da água</small><div class="value" id="flow">0,0 L/min</div><div class="pill">Constante</div></div>
+      </div>
+
+      <div class="controls">
+        <div class="control-row">
+          <label for="vacuum">Potência de vácuo</label>
+          <input type="range" id="vacuum" min="20" max="100" value="60">
+          <span class="pill" id="vacuumLabel">60%</span>
+        </div>
+        <div class="control-row">
+          <label for="rhythm">Ritmo da válvula</label>
+          <input type="range" id="rhythm" min="30" max="120" value="80">
+          <span class="pill" id="rhythmLabel">80 ciclos/min</span>
+        </div>
+        <div class="control-row">
+          <label for="pressure">Pressão de entrada</label>
+          <input type="range" id="pressure" min="1" max="6" value="3" step="0.1">
+          <span class="pill" id="pressureLabel">3,0 bar</span>
+        </div>
+        <div class="flex">
+          <button id="startBtn">Iniciar simulação</button>
+          <button class="secondary" id="resetBtn">Resetar</button>
+        </div>
+        <div class="log" id="log">Aguardando inicialização do fluxo...</div>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2 class="aside-title">Como o tubo funciona</h2>
+      <p>O dispositivo cria zonas de baixa pressão que puxam o ar aprisionado na tubulação para a câmara lateral, onde as bolhas são separadas e expelidas. Quanto maior a potência de vácuo e mais rápido o ritmo da válvula, mais ar é removido antes da água alcançar o hidrômetro.</p>
+      <ul>
+        <li>Formato tubular com janela transparente para inspeção.</li>
+        <li>Malha ciclônica que desacelera bolhas e acelera a água.</li>
+        <li>Sensores estimam o volume de ar separado em tempo real.</li>
+      </ul>
+      <div class="stat" style="margin-top:14px;">
+        <small>Modo sugerido</small>
+        <div class="value">Alta eficiência</div>
+        <p style="color:var(--muted); margin:6px 0 0;">Vácuo ≥ 70%, ritmo ≥ 90 ciclos/min e pressão entre 2,5 e 4 bar.</p>
+      </div>
+      <div class="stat" style="margin-top:10px;">
+        <small>Resumo da rodada</small>
+        <div class="value" id="summary">—</div>
+        <p style="color:var(--muted); margin:6px 0 0;" id="summaryDetail">Aguarde uma rodada completa para ver o resultado.</p>
+      </div>
+    </aside>
   </div>
 
   <script>
-    // --- Jogo: Desafio de Lógica Relâmpago ---
-    const problemEl = document.getElementById('problem');
-    const answerInput = document.getElementById('answerInput');
-    const submitBtn = document.getElementById('submitBtn');
-    const hintBtn = document.getElementById('hintBtn');
-    const skipBtn = document.getElementById('skipBtn');
-    const newBtn = document.getElementById('newBtn');
-    const timerEl = document.getElementById('timer');
-    const lastHintEl = document.getElementById('lastHint');
-    const scoreLabel = document.getElementById('scoreLabel');
-    const levelLabel = document.getElementById('levelLabel');
-    const highscoreEl = document.getElementById('highscore');
-    const arcadeBtn = document.getElementById('arcadeBtn');
-    const levelBtns = document.querySelectorAll('.level-btn');
+    const tubeInner = document.getElementById('tubeInner');
+    const purityEl = document.getElementById('purity');
+    const airRemovedEl = document.getElementById('airRemoved');
+    const flowEl = document.getElementById('flow');
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    const summaryEl = document.getElementById('summary');
+    const summaryDetailEl = document.getElementById('summaryDetail');
 
-    let game = null;
+    const vacuum = document.getElementById('vacuum');
+    const rhythm = document.getElementById('rhythm');
+    const pressure = document.getElementById('pressure');
+    const vacuumLabel = document.getElementById('vacuumLabel');
+    const rhythmLabel = document.getElementById('rhythmLabel');
+    const pressureLabel = document.getElementById('pressureLabel');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
 
-    function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
-
-    const generators = {
-      1: generateEasy,
-      2: generateMedium,
-      3: generateHard
+    let interval = null;
+    let state = {
+      running: false,
+      airRemoved: 0,
+      water: 0,
+      ticks: 0
     };
 
-    function generateEasy(){
-      const types = ['seq','math','riddle'];
-      const t = types[randInt(0,types.length-1)];
-      if(t==='seq'){
-        const start = randInt(1,5);
-        const mul = [2,3][randInt(0,1)];
-        const seq = [start,start*mul,start*mul*mul];
-        return {text:`Sequência: ${seq.join(', ')} , ___`, answer:String(seq[2]*mul), hint:`Multiplica por ${mul}`};
-      }
-      if(t==='math'){
-        const a=randInt(2,9);const b=randInt(2,9);
-        return {text:`Quanto é ${a} × ${b}?`, answer:String(a*b), hint:`Multiplicação básica: ${a} vezes ${b}`};
-      }
-      const r = [{q:'Sou tomado antes de comer. O que sou?', a:'muito fome'},{q:'Tenho chaves mas não tranco nada. O que sou?', a:'piano'}];
-      const pick=r[randInt(0,r.length-1)];
-      return {text:`Charada: ${pick.q}`, answer:pick.a, hint:`Pense em objetos do dia a dia`};
+    function renderBubble(x, delay) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.style.left = `${x}%`;
+      bubble.style.animationDelay = `${delay}s`;
+      bubble.style.opacity = 0.35 + Math.random() * 0.35;
+      tubeInner.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 6000);
     }
 
-    function generateMedium(){
-      const t = randInt(0,2);
-      if(t===0){
-        const start=randInt(1,10);const diff=randInt(2,6);
-        return {text:`Sequência: ${start}, ${start+diff}, ${start+2*diff}, ___`, answer:String(start+3*diff), hint:`Adiciona ${diff} a cada passo`};
-      }
-      if(t===1){
-        const a=randInt(2,12);const b=randInt(1,10);
-        return {text:`Se 3x + ${b} = ${3*a+b}, qual é x?`, answer:String(a), hint:`Isole x`};
-      }
-      return {text:`Qual palavra completa a sequência: CASA, SASA, ? (troca 1 letra)`, answer:'CASO', hint:'Troque uma letra para formar uma palavra válida'};
-    }
-
-    function generateHard(){
-      const t = randInt(0,2);
-      if(t===0){
-        const a=randInt(1,6);const b=randInt(1,9);
-        return {text:`Sequência: ${a}, ${b}, ${a+b}, ${a+2*b}, ___`, answer:String(2*a+3*b), hint:'Padrão baseado em somas lineares'};
-      }
-      if(t===1){
-        const x=randInt(2,9);const y=randInt(2,9);
-        return {text:`Resolva: ${x}y = ${x*y}. Qual é y?`, answer:String(y), hint:`Divida ambos os lados por ${x}`};
-      }
-      return {text:`Se TODOS os rosas são flores e ALGUMAS flores são perfumadas, podemos afirmar que ALGUMAS rosas são perfumadas? (sim/não)`, answer:'não', hint:'"Algumas" não garante interseção'};
-    }
-
-    function newGame(){
-      game = {
-        level:1,
-        score:0,
-        time:30,
-        running:false,
-        current:null,
-        arcade:false
-      };
-      loadHighscore();
-      updateUI();
-      nextProblem();
-    }
-
-    function loadHighscore(){
-      const hs = localStorage.getItem('dlr_highscore')||'0';
-      highscoreEl.textContent = hs;
-    }
-
-    function saveHighscore(){
-      const cur = Number(localStorage.getItem('dlr_highscore')||0);
-      if(game.score>cur) localStorage.setItem('dlr_highscore',String(game.score));
-      loadHighscore();
-    }
-
-    function updateUI(){
-      scoreLabel.textContent = game.score;
-      levelLabel.textContent = game.level;
-    }
-
-    function formatTime(sec){
-      const s = String(sec%60).padStart(2,'0');
-      return `00:${s}`;
-    }
-
-    let timerInterval = null;
-    function startTimer(){
-      if(timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(()=>{
-        game.time -= 1;
-        if(game.time<0) game.time = 0;
-        timerEl.textContent = formatTime(game.time);
-        if(game.time<=0){
-          clearInterval(timerInterval);
-          endRound();
-        }
-      },1000);
-    }
-
-    function beginIfNeeded(){
-      if(!game.running){
-        game.running = true;
-        startTimer();
+    function seedBubbles(count = 8) {
+      for (let i = 0; i < count; i++) {
+        renderBubble(10 + Math.random() * 80, Math.random() * 2);
       }
     }
 
-    function nextProblem(){
-      const gen = generators[game.level] || generators[1];
-      const p = gen();
-      game.current = p;
-      problemEl.textContent = p.text;
-      lastHintEl.textContent = '—';
-      answerInput.value = '';
-      timerEl.textContent = formatTime(game.time);
+    function updateLabels() {
+      vacuumLabel.textContent = `${vacuum.value}%`;
+      rhythmLabel.textContent = `${rhythm.value} ciclos/min`;
+      pressureLabel.textContent = `${Number(pressure.value).toFixed(1)} bar`;
     }
 
-    function checkAnswer(){
-      beginIfNeeded();
-      const raw = answerInput.value.trim().toLowerCase();
-      if(!raw) return flash("Escreva algo antes de enviar");
-      const correct = String(game.current.answer).trim().toLowerCase();
-      if(raw === correct){
-        const gained = 10 + Math.max(0, Math.floor(game.time/3));
-        game.score += gained;
-        flash(`Correto! +${gained} pts`);
-        if(game.score > 0 && game.score % 40 === 0) game.level = Math.min(3, game.level+1);
-        updateUI();
-        if(game.arcade){
-          game.time = Math.min(120, game.time + 7);
-        }
-        nextProblem();
-      } else {
-        game.score = Math.max(0, game.score - 2);
-        flash('Errado. Tente outra vez ou peça uma dica (-5 pts)');
-        updateUI();
+    function log(text) {
+      const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+      logEl.textContent = `[${time}] ${text}\n${logEl.textContent}`.trim().slice(0, 800);
+    }
+
+    function computeEfficiency() {
+      const vac = Number(vacuum.value);
+      const ryt = Number(rhythm.value);
+      const pres = Number(pressure.value);
+      const pressureBoost = pres >= 2.5 && pres <= 4.2 ? 1.12 : 0.94;
+      const efficiency = (vac * 0.55 + ryt * 0.35) * pressureBoost;
+      return Math.min(99.9, Math.max(70, efficiency));
+    }
+
+    function tick() {
+      state.ticks += 1;
+      const eff = computeEfficiency();
+      const purity = 80 + (eff / 100) * 19;
+      const airExtracted = (eff / 1000) * 0.12; // litros por ciclo
+      const flow = 0.6 + Number(pressure.value) * 0.35;
+
+      state.airRemoved += airExtracted;
+      state.water += flow / 40; // aproximando para 1,5s
+
+      purityEl.textContent = `${purity.toFixed(1)}%`;
+      airRemovedEl.textContent = `${state.airRemoved.toFixed(2)} L`;
+      flowEl.textContent = `${flow.toFixed(1)} L/min`;
+
+      statusEl.textContent = eff > 85 ? 'Alta eficiência' : 'Modo Eco';
+      statusEl.style.background = eff > 85 ? 'rgba(76,241,199,0.18)' : 'rgba(31,182,255,0.12)';
+
+      renderBubble(12 + Math.random() * 76, 0);
+
+      if (state.ticks % 20 === 0) {
+        summaryEl.textContent = `${state.airRemoved.toFixed(2)} L de ar em ${state.water.toFixed(1)} L de água`;
+        summaryDetailEl.textContent = eff > 85
+          ? 'O vácuo está no limite ideal, a leitura do hidrômetro fica mais justa.'
+          : 'Aumente o vácuo ou o ritmo para elevar a eficiência de extração.';
       }
     }
 
-    function requestHint(){
-      if(!game.current) return;
-      game.score = Math.max(0, game.score - 5);
-      lastHintEl.textContent = game.current.hint || 'Sem dica disponível';
-      updateUI();
+    function start() {
+      if (state.running) return;
+      state.running = true;
+      log('Simulação iniciada: ar será separado antes do hidrômetro.');
+      seedBubbles();
+      interval = setInterval(tick, 1500);
+      startBtn.textContent = 'Rodando';
+      startBtn.disabled = true;
     }
 
-    function skipProblem(){
-      game.score = Math.max(0, game.score - 3);
-      updateUI();
-      nextProblem();
+    function reset() {
+      state = { running: false, airRemoved: 0, water: 0, ticks: 0 };
+      purityEl.textContent = '99,8%';
+      airRemovedEl.textContent = '0,00 L';
+      flowEl.textContent = '0,0 L/min';
+      statusEl.textContent = 'Modo Eco';
+      statusEl.style.background = 'rgba(31,182,255,0.12)';
+      summaryEl.textContent = '—';
+      summaryDetailEl.textContent = 'Aguarde uma rodada completa para ver o resultado.';
+      log('Parâmetros resetados. Ajuste os controles e inicie novamente.');
+      tubeInner.innerHTML = '';
+      if (interval) clearInterval(interval);
+      startBtn.textContent = 'Iniciar simulação';
+      startBtn.disabled = false;
     }
 
-    function endRound(){
-      game.running = false;
-      saveHighscore();
-      alert(`Tempo! Resultado: ${game.score} pontos. Nível alcançado: ${game.level}`);
-      game.time = game.arcade ? 60 : 30;
-      game.score = 0;
-      game.level = 1;
-      updateUI();
-      nextProblem();
-    }
+    vacuum.addEventListener('input', updateLabels);
+    rhythm.addEventListener('input', updateLabels);
+    pressure.addEventListener('input', updateLabels);
+    startBtn.addEventListener('click', start);
+    resetBtn.addEventListener('click', reset);
 
-    function flash(txt){
-      const prev = problemEl.textContent;
-      problemEl.textContent = txt;
-      setTimeout(()=>{ if(game.current) problemEl.textContent = game.current.text; },900);
-    }
-
-    submitBtn.addEventListener('click', checkAnswer);
-    answerInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') checkAnswer(); });
-    hintBtn.addEventListener('click',()=>{ requestHint(); });
-    skipBtn.addEventListener('click',()=>{ skipProblem(); });
-    newBtn.addEventListener('click',()=>{ if(confirm('Iniciar novo jogo?')) newGame(); });
-
-    arcadeBtn.addEventListener('click',()=>{
-      if(confirm('Iniciar Modo Arcade: 60 segundos. Pronto?')){
-        game.arcade = true; game.time = 60; game.score = 0; game.level = 1; updateUI(); nextProblem(); startTimer(); game.running=true;
-      }
-    });
-
-    levelBtns.forEach(b=>{
-      b.addEventListener('click',()=>{
-        levelBtns.forEach(x=>x.classList.remove('active'));
-        b.classList.add('active');
-        game.level = Number(b.dataset.level);
-        updateUI();
-        nextProblem();
-      });
-    });
-
-    newGame();
+    updateLabels();
+    log('Aguardando inicialização do fluxo...');
+    setTimeout(() => {
+      log('Fluxo detectado, iniciando simulação automática.');
+      start();
+    }, 600);
   </script>
 </body>
 </html>
